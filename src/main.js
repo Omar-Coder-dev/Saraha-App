@@ -11,6 +11,7 @@ const main = async () => {
     console.log(`Server is running on port ${process.env.PORT}`),
   );
   await DBConnection();
+  app.use("/uploads", express.static("./uploads"));
   app.use(cors());
   app.use("/auth", authRouter);
   app.use("/users", userRouter);

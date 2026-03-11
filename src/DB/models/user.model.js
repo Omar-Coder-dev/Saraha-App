@@ -30,6 +30,8 @@ const userSchema = new Schema(
     },
     otp: { code: String, expiresIn: Date },
     isVerified: { type: Boolean, default: false },
+    profileImage: { type: String },
+    coverImages: { type: [String] },
   },
   {
     timestamps: true,

@@ -3,13 +3,21 @@ import { userModel } from "../DB/models/user.model.js";
 
 export const authentication = async (req, res, next) => {
   try {
-    const { token } = req.headers;
+    let token = req.headers.token || req.headers.authorization;
+    
+    if (token?.startsWith("Bearer ")) {
+      token = token.split(" ")[1];
+    }
+
     if (!token)
       return next(new Error("token required", { cause: { status: 401 } }));
+      
     const payload = jwt.verify(token, process.env.TOKEN_SIGNITURE);
     const user = await userModel.findById(payload._id);
+    
     if (!user)
       return next(new Error("user not found", { cause: { status: 404 } }));
+      
     req.user = user;
     next();
   } catch (error) {
