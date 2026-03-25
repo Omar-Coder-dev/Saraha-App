@@ -13,6 +13,7 @@ const userSchema = new Schema(
         return this.provider === Providers.system;
       },
     },
+    blackList: [String],
     gender: {
       type: Number,
       enum: Object.values(Gender),
@@ -23,6 +24,7 @@ const userSchema = new Schema(
       enum: Object.values(Roles),
       default: Roles.user,
     },
+    credentialsChangedAt: { type: Date },
     provider: {
       type: Number,
       enum: Object.values(Providers),

@@ -5,6 +5,9 @@ import { userModel } from "../../DB/models/user.model.js";
 import { sendEmail } from "../../utils/email.js";
 import * as repo from "../../DB/db.repo.js";
 import crypto from "crypto";
+import { Logout } from "../../DB/enum.js";
+import { set } from "../../DB/redis.services.js";
+
 export const signupService = async (data) => {
   data.password = await hash({ plainText: data.password });
   data.phone = encryption(data.phone);
@@ -22,16 +25,16 @@ export const loginService = async ({ email, password }) => {
   if (!isMatch) {
     throw new Error("invalid credentials", { cause: { status: 401 } });
   }
-
+  const jwtid = crypto.randomUUID()
   const accessToken = jwt.sign(
     { _id: user._id, role: user.role },
     process.env.TOKEN_SIGNITURE,
-    { expiresIn: "1h" },
+    { expiresIn: "1h" , jwtid },
   );
   const refreshToken = jwt.sign(
     { _id: user._id, role: user.role },
     process.env.REFRESH_TOKEN_SIGNITURE,
-    { expiresIn: "7d" },
+    { expiresIn: "7d" , jwtid  },
   );
   return { accessToken, refreshToken };
 };
@@ -96,4 +99,21 @@ export const googleLoginService = async (idToken) => {
     );
 
     return { accessToken };
+};
+
+export const logoutService = async ({ user, payload, flag = Logout.all }) => {
+    if (flag === Logout.all) {
+        user.credentialsChangedAt = Date.now();
+        await user.save();
+    } else if (flag === Logout.current) {
+        const timeLeft = Math.floor(payload.exp - (Date.now() / 1000));
+        
+        await set({
+            key: `blacklist:${payload.jti}`,
+            value: 'true',
+            ttl: timeLeft > 0 ? timeLeft : 3600
+        });
+    }
+    
+    return { data: {} };
 };

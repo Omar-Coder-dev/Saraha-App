@@ -1,5 +1,5 @@
 import Joi from "joi";
-import { Gender } from "../../DB/enum.js";
+import { Gender, Logout } from "../../DB/enum.js";
 const phoneRegex = /^01[0125][0-9]{8}$/;
 const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
 export const signupSchema = Joi.object({
@@ -24,4 +24,8 @@ export const loginSchema = Joi.object({
 
 export const googleSignupSchema = Joi.object({
   idToken: Joi.string().required(),
+});
+
+export const logoutSchema = Joi.object({
+    flag: Joi.string().valid(...Object.values(Logout)).required(),
 });

@@ -10,3 +10,7 @@ export const Providers = {
     system: 0, 
     google: 1
 }; 
+export const Logout ={
+    all:"all",
+    current:"current"
+}

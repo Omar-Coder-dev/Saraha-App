@@ -3,6 +3,7 @@ import authRouter from "./modules/auth/auth.controller.js";
 import userRouter from "./modules/userModule/user.controller.js";
 import { DBConnection } from "./DB/db.connection.js";
 import cors from "cors";
+import { redisConnect } from "./DB/redis.connection.js";
 const main = async () => {
   const app = express();
   app.use(express.json());
@@ -11,6 +12,7 @@ const main = async () => {
     console.log(`Server is running on port ${process.env.PORT}`),
   );
   await DBConnection();
+  await redisConnect();
   app.use("/uploads", express.static("./uploads"));
   app.use(cors());
   app.use("/auth", authRouter);

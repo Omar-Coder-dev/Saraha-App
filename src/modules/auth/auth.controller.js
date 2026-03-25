@@ -1,7 +1,13 @@
 import { Router } from "express";
 import * as authService from "./auth.service.js";
 import { validation } from "../../middlewares/validation.middleware.js";
-import { signupSchema, loginSchema, googleSignupSchema } from "./auth.validation.js";
+import {
+  signupSchema,
+  loginSchema,
+  googleSignupSchema,
+  logoutSchema,
+} from "./auth.validation.js";
+import { authentication } from "../../middlewares/auth.middleware.js";
 
 const router = Router();
 router.post("/signup", validation(signupSchema), async (req, res, next) => {
@@ -47,16 +53,30 @@ router.post("/refresh-token", async (req, res, next) => {
   }
 });
 
-router.post('/signup/gmail', 
-    validation(googleSignupSchema), 
-    async (req, res, next) => {
-        try {
-            const data = await authService.googleLoginService(req.body.idToken);
-            res.status(200).json({ msg: "done", data });
-        } catch (error) {
-            next(error);
-        }
+router.post(
+  "/signup/gmail",
+  validation(googleSignupSchema),
+  async (req, res, next) => {
+    try {
+      const data = await authService.googleLoginService(req.body.idToken);
+      res.status(200).json({ msg: "done", data });
+    } catch (error) {
+      next(error);
     }
+  },
 );
 
+router.patch(
+  "/logout",
+  authentication,
+  validation(logoutSchema),
+  async (req, res) => {
+    const data = await authService.logoutService({
+      user: req.user,
+      payload: req.authPayload,
+      flag: req.body.flag,
+    });
+    res.status(200).json({ msg: "done", data });
+  },
+);
 export default router;
