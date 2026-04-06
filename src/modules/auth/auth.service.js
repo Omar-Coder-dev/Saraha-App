@@ -7,11 +7,12 @@ import * as repo from "../../DB/db.repo.js";
 import crypto from "crypto";
 import { Logout } from "../../DB/enum.js";
 import { set, get, deleteByKey } from "../../DB/redis.services.js";
+import { redisClient } from "../../DB/redis.connection.js";
 
 export const signupService = async (data) => {
   data.password = await hash({ plainText: data.password });
   data.phone = encryption(data.phone);
-  
+
   const user = await repo.create({ model: userModel, data });
 
   const code = generateOTP();
@@ -42,7 +43,9 @@ export const loginService = async ({ email, password }) => {
   }
 
   if (!user.isVerified) {
-    throw new Error("Please verify your email first", { cause: { status: 401 } });
+    throw new Error("Please verify your email first", {
+      cause: { status: 401 },
+    });
   }
   const isMatch = await compare({ cypherText: user.password, text: password });
 
@@ -94,7 +97,7 @@ export const forgetPasswordService = async (email) => {
 export const resetPasswordService = async ({ email, otp, newPassword }) => {
   // Check Redis instead of User document
   const storedOtp = await get({ key: `otp:${email}` });
-  
+
   if (!storedOtp || storedOtp !== otp) {
     throw new Error("invalid or expired otp", { cause: { status: 400 } });
   }
@@ -174,16 +177,18 @@ export const logoutService = async ({ user, payload, flag = Logout.all }) => {
 export const confirmEmailService = async ({ email, otp }) => {
   // 1. Get from Redis
   const storedOtp = await get({ key: `confirm:${email}` });
-  
+
   if (!storedOtp || storedOtp !== otp) {
-    throw new Error("invalid or expired confirmation code", { cause: { status: 400 } });
+    throw new Error("invalid or expired confirmation code", {
+      cause: { status: 400 },
+    });
   }
 
   // 2. Update MongoDB status using the model directly
   const user = await userModel.findOneAndUpdate(
-    { email }, 
+    { email },
     { isVerified: true },
-    { new: true } // This returns the updated document
+    { new: true }, // This returns the updated document
   );
 
   if (!user) throw new Error("user not found", { cause: { status: 404 } });
@@ -194,27 +199,20 @@ export const confirmEmailService = async ({ email, otp }) => {
   return { msg: "account verified successfully" };
 };
 
-export const resendOtpService = async (email) => {
+export const resendOTP = async (email) => {
   const user = await userModel.findOne({ email });
-  if (!user) throw new Error("user not found", { cause: { status: 404 } });
-  if (user.isVerified) throw new Error("user already verified, just login", { cause: { status: 400 } });
+  if (!user) throw new Error("User not found", { cause: 404 });
 
-  const code = generateOTP();
-  // Set to 300 (5 minutes)
-  await set({ key: `confirm:${email}`, value: code, ttl: 300 });
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-      <h2 style="color: #333; text-align: center;">New Verification Code</h2>
-      <p>You requested a new code. This code will expire in <b>5 minutes</b>.</p>
-      <div style="background: #fff4e5; padding: 20px; text-align: center; font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #ff9800; border-radius: 8px; margin: 20px 0;">
-        ${code}
-      </div>
-      <p style="font-size: 13px; color: #666; text-align: center;">Stay secure!</p>
-    </div>
-  `;
+  // Save to Redis
+  await redisClient.set(`confirm:${email}`, otp, "EX", 300);
+  // FIX: Wrap the arguments in an object { to, subject, html }
+  await sendEmail({
+    to: email,
+    subject: "Your New OTP",
+    html: `<b>Your code is: ${otp}</b>`,
+  });
 
-  await sendEmail({ to: email, subject: "Your New Verification Code", html });
-  
   return { msg: "New OTP sent to your email" };
 };

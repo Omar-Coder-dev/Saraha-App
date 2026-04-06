@@ -89,10 +89,10 @@ router.post("/confirm-email", async (req, res, next) => {
   }
 });
 
-router.patch("/resend-otp", async (req, res, next) => {
+router.post("/resend-otp", async (req, res, next) => {
   try {
     const { email } = req.body;
-    res.json(await authService.resendOtpService(email));
+    res.json(await authService.resendOTP(email));
   } catch (error) {
     next(error);
   }
