@@ -79,4 +79,22 @@ router.patch(
     res.status(200).json({ msg: "done", data });
   },
 );
+
+router.post("/confirm-email", async (req, res, next) => {
+  try {
+    const { email, otp } = req.body;
+    res.json(await authService.confirmEmailService({ email, otp }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/resend-otp", async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    res.json(await authService.resendOtpService(email));
+  } catch (error) {
+    next(error);
+  }
+});
 export default router;

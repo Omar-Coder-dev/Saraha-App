@@ -13,7 +13,6 @@ const userSchema = new Schema(
         return this.provider === Providers.system;
       },
     },
-    blackList: [String],
     gender: {
       type: Number,
       enum: Object.values(Gender),
@@ -30,7 +29,6 @@ const userSchema = new Schema(
       enum: Object.values(Providers),
       default: Providers.system,
     },
-    otp: { code: String, expiresIn: Date },
     isVerified: { type: Boolean, default: false },
     profileImage: { type: String },
     coverImages: { type: [String] },

@@ -3,6 +3,7 @@ import authRouter from "./modules/auth/auth.controller.js";
 import userRouter from "./modules/userModule/user.controller.js";
 import { DBConnection } from "./DB/db.connection.js";
 import cors from "cors";
+import messageRouter from "./modules/message/message.controller.js";
 import { redisConnect } from "./DB/redis.connection.js";
 const main = async () => {
   const app = express();
@@ -13,6 +14,7 @@ const main = async () => {
   );
   await DBConnection();
   await redisConnect();
+  app.use("/message", messageRouter);
   app.use("/uploads", express.static("./uploads"));
   app.use(cors());
   app.use("/auth", authRouter);
